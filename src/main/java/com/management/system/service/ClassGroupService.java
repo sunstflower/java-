@@ -1,5 +1,8 @@
 package com.management.system.service;
-
+ 
+/* 
+ * 班级管理の业务
+ */
 import com.management.system.model.ClassGroup;
 import com.management.system.model.Student;
 import com.management.system.model.Teacher;
@@ -21,32 +24,32 @@ public class ClassGroupService {
     @Autowired
     private StudentRepository studentRepository;
     
-    public List<ClassGroup> getAllClassGroups() {
+    public List<ClassGroup> getAllClassGroups() { // 获取所有班级
         return classGroupRepository.findAll();
     }
     
-    public Optional<ClassGroup> getClassGroupById(Long id) {
+    public Optional<ClassGroup> getClassGroupById(Long id) { // 获取班级
         return classGroupRepository.findById(id);
     }
     
-    public List<ClassGroup> getClassGroupsByTeacher(Teacher teacher) {
+    public List<ClassGroup> getClassGroupsByTeacher(Teacher teacher) { // 获取教师对应所有班级
         return classGroupRepository.findByTeacher(teacher);
     }
     
-    public ClassGroup createClassGroup(ClassGroup classGroup) {
+    public ClassGroup createClassGroup(ClassGroup classGroup) { // 创建班级
         return classGroupRepository.save(classGroup);
     }
     
-    public ClassGroup updateClassGroup(ClassGroup classGroup) {
+    public ClassGroup updateClassGroup(ClassGroup classGroup) { // 更新班级
         return classGroupRepository.save(classGroup);
     }
     
-    public void deleteClassGroup(Long id) {
+    public void deleteClassGroup(Long id) { // 删除班级
         classGroupRepository.deleteById(id);
     }
     
     @Transactional
-    public void addStudentToClassGroup(Long classGroupId, Long studentId) {
+    public void addStudentToClassGroup(Long classGroupId, Long studentId) {  // 添加学生到班级
         ClassGroup classGroup = classGroupRepository.findById(classGroupId)
                 .orElseThrow(() -> new RuntimeException("Class group not found with id: " + classGroupId));
         
@@ -61,7 +64,7 @@ public class ClassGroupService {
     }
     
     @Transactional
-    public void removeStudentFromClassGroup(Long classGroupId, Long studentId) {
+    public void removeStudentFromClassGroup(Long classGroupId, Long studentId) {  // 移除
         ClassGroup classGroup = classGroupRepository.findById(classGroupId)
                 .orElseThrow(() -> new RuntimeException("Class group not found with id: " + classGroupId));
         

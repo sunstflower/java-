@@ -1,4 +1,8 @@
 package com.management.system.repository;
+/* 
+ * 班级组仓库
+ * 
+ */
 
 import com.management.system.model.ClassGroup;
 import com.management.system.model.Teacher;

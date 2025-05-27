@@ -1,5 +1,7 @@
 package com.management.system.repository;
-
+/*      
+ * 二维码仓库
+ */
 import com.management.system.model.QRCode;
 import com.management.system.model.Student;
 import org.springframework.data.jpa.repository.JpaRepository;

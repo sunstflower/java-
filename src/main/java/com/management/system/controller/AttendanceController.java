@@ -22,8 +22,8 @@ public class AttendanceController { //考勤控制器
     @Autowired
     private AttendanceService attendanceService;
 
-    @PostMapping
-    @PreAuthorize("hasRole('TEACHER')")
+    @PostMapping // 记录考勤
+    @PreAuthorize("hasRole('TEACHER')") // 权限控制
     public ResponseEntity<?> recordAttendance(@Valid @RequestBody AttendanceRequest attendanceRequest) {
         attendanceService.recordAttendance(
             attendanceRequest.getStudentId(),

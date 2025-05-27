@@ -1,22 +1,27 @@
 package com.management.system.service;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
+/* 
+ * 干二维码的
+ * 
+ */
+
+import com.google.zxing.BarcodeFormat;  // 二维码格式   
+import com.google.zxing.WriterException;  // 二维码生成异常
+import com.google.zxing.client.j2se.MatrixToImageWriter;  // 二维码生成 矩阵ToImageの写手
+import com.google.zxing.common.BitMatrix;  // 二维码矩阵
+import com.google.zxing.qrcode.QRCodeWriter;  // 二维码生成
 import com.management.system.model.QRCode;
 import com.management.system.model.Student;
 import com.management.system.repository.QRCodeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Base64;
+import java.io.ByteArrayOutputStream;  // 字节数组输出流
+import java.io.IOException;  // 输入输出异常
+import java.time.LocalDateTime;  // 本地日期时间
+import java.util.Base64;  // 基础64编码 用于加密
 import java.util.Optional;
-import java.util.UUID;
+import java.util.UUID;  // 通用唯一标识符 生成唯一码
 
 @Service
 public class QRCodeService {
@@ -39,6 +44,13 @@ public class QRCodeService {
         qrCode.setGeneratedTime(now);
         qrCode.setExpiryTime(expiryTime);
         qrCode.setUsed(false);
+        /* {
+         *  "student": 学生,
+         *  "code": 二维码,
+         *  "generatedTime": 生成时间,
+         *  "expiryTime": 过期时间,
+         *  "used": 是否使用,
+        } */
         
         // 保存到数据库
         return qrCodeRepository.save(qrCode);
@@ -46,12 +58,20 @@ public class QRCodeService {
     
     public String generateQRCodeImage(String content, int width, int height) throws WriterException, IOException {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
-        BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, width, height);
+        BitMatrix bitMatrix = qrCodeWriter.encode(
+            content,  // 二维码内容
+            BarcodeFormat.QR_CODE,  // 二维码格式
+            width, height  // 二维码大小
+            ); 
         
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(); // 二维码里的点
+        MatrixToImageWriter.writeToStream(
+            bitMatrix,  // 矩阵
+            "PNG",  // 格式
+            outputStream  // 二维码输出流
+            );
         
-        return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+        return Base64.getEncoder().encodeToString(outputStream.toByteArray());  // 二维码のBase64编码
     }
     
     public Optional<QRCode> verifyQRCode(String code) {
@@ -59,12 +79,12 @@ public class QRCodeService {
         return qrCodeRepository.findByCodeAndUsedFalseAndExpiryTimeAfter(code, LocalDateTime.now());
     }
     
-    public void markQRCodeAsUsed(QRCode qrCode) {
+    public void markQRCodeAsUsed(QRCode qrCode) {  //二维码使用标记
         qrCode.setUsed(true);
         qrCodeRepository.save(qrCode);
     }
     
-    public void cleanupExpiredQRCodes() {
+    public void cleanupExpiredQRCodes() {  // 清理过期二维码
         LocalDateTime now = LocalDateTime.now();
         qrCodeRepository.findByExpiryTimeBefore(now).forEach(qrCode -> {
             qrCode.setUsed(true);

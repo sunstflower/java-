@@ -1,5 +1,8 @@
 package com.management.system.repository;
-
+/* 
+ * 学生仓库
+ * 
+ */
 import com.management.system.model.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

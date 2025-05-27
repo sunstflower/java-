@@ -1,4 +1,8 @@
 package com.management.system.repository;
+/* 
+ * 考勤仓库
+ * 
+ */
 
 import com.management.system.model.Attendance;
 import com.management.system.model.ClassGroup;
