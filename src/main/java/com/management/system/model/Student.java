@@ -14,8 +14,7 @@ package com.management.system.model;
  */ 
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;    
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -37,7 +36,6 @@ public class Student extends User {
     )
     private Set<ClassGroup> classGroups = new HashSet<>(); // 班级组
     
-    // NoArgsConstructor
     public Student() {
         super();
     }

@@ -1,7 +1,7 @@
 package com.management.system.service;
 
 /* 
- * 干二维码的
+ * 二维码生，存，查，用
  * 
  */
 
