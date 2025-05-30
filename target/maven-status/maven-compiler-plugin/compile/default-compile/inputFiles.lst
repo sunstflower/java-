@@ -18,6 +18,7 @@
 /Users/sunsetflower/Desktop/Java/student-management-system/backend/src/main/java/com/management/system/repository/UserRepository.java
 /Users/sunsetflower/Desktop/Java/student-management-system/backend/src/main/java/com/management/system/security/JwtAuthenticationFilter.java
 /Users/sunsetflower/Desktop/Java/student-management-system/backend/src/main/java/com/management/system/StudentManagementSystemApplication.java
+/Users/sunsetflower/Desktop/Java/student-management-system/backend/src/main/java/com/management/system/dto/ClassGroupDTO.java
 /Users/sunsetflower/Desktop/Java/student-management-system/backend/src/main/java/com/management/system/model/QRCode.java
 /Users/sunsetflower/Desktop/Java/student-management-system/backend/src/main/java/com/management/system/security/UserDetailsImpl.java
 /Users/sunsetflower/Desktop/Java/student-management-system/backend/src/main/java/com/management/system/repository/StudentRepository.java

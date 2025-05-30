@@ -1,5 +1,6 @@
 package com.management.system.controller;
 
+import com.management.system.dto.ClassGroupDTO;
 import com.management.system.model.ClassGroup;
 import com.management.system.model.Teacher;
 import com.management.system.payload.response.MessageResponse;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid; // 验证
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController  
@@ -53,13 +55,12 @@ public class ClassGroupController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); // 获取安全认证
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();  //安全上下方文中拿用户
         
-        Optional<Teacher> teacher = teacherRepository.findById(userDetails.getId()); // 上下文用户是不是teacher
-        if (teacher.isEmpty()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Teacher not found"));
-        }
-        
-        List<ClassGroup> classGroups = classGroupService.getClassGroupsByTeacher(teacher.get());
-        return ResponseEntity.ok(classGroups);
+        // 直接使用teacherId查询，避免Teacher对象序列化问题
+        List<ClassGroup> classGroups = classGroupService.getClassGroupsByTeacherId(userDetails.getId());
+        List<ClassGroupDTO> classGroupDTOs = classGroups.stream()
+                .map(ClassGroupDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(classGroupDTOs);
     }
     
     @PostMapping

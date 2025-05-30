@@ -26,7 +26,9 @@ com/management/system/service/UserDetailsServiceImpl.class
 com/management/system/repository/AttendanceRepository.class
 com/management/system/model/ERole.class
 com/management/system/service/AttendanceService.class
+com/management/system/dto/ClassGroupDTO.class
 com/management/system/security/JwtAuthenticationEntryPoint.class
+com/management/system/dto/ClassGroupDTO$StudentDTO.class
 com/management/system/model/Teacher.class
 com/management/system/model/QRCode.class
 com/management/system/config/SecurityConfig.class

@@ -36,6 +36,10 @@ public class ClassGroupService {
         return classGroupRepository.findByTeacher(teacher);
     }
     
+    public List<ClassGroup> getClassGroupsByTeacherId(Long teacherId) { // 根据教师ID获取班级
+        return classGroupRepository.findByTeacherId(teacherId);
+    }
+    
     public ClassGroup createClassGroup(ClassGroup classGroup) { // 创建班级
         return classGroupRepository.save(classGroup);
     }

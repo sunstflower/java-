@@ -13,8 +13,9 @@ package com.management.system.model;
  * }
  */ 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import lombok.EqualsAndHashCode;    
+import lombok.EqualsAndHashCode;  //
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -28,14 +29,11 @@ public class Student extends User {
     
     private String studentId;
     
-    @ManyToMany(fetch = FetchType.LAZY) // 懒加载 因为学生多
-    @JoinTable( // 连接表  多对多 学生-班级组
-        name = "student_classgroups", // 表名
-        joinColumns = @JoinColumn(name = "student_id"), // 学生ID
-        inverseJoinColumns = @JoinColumn(name = "classgroup_id") // 班级组ID
-    )
+    @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY) // 懒加载
+    @JsonIgnore // 防止JSON序列化无限循环，在学生端忽略班级组信息
     private Set<ClassGroup> classGroups = new HashSet<>(); // 班级组
     
+    // NoArgsConstructor
     public Student() {
         super();
     }

@@ -10,6 +10,7 @@ package com.management.system.model;
  * }    
  */
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,11 +37,24 @@ public class ClassGroup {
 
     @ManyToOne // 多对一 教师-班级组
     @JoinColumn(name = "teacher_id")
-    private Teacher teacher;
+    @JsonBackReference // 防止JSON序列化无限循环
+    private Teacher teacher; // 教师
 
-    @ManyToMany(mappedBy = "classGroups", fetch = FetchType.LAZY) // 多对多 学生-班级组,懒加载学生多
-    private Set<Student> students = new HashSet<>(); 
-    
+    @ManyToMany // 多对多 学生-班级组
+    @JoinTable(
+        name = "class_group_students", // 关联表
+        joinColumns = @JoinColumn(name = "class_group_id"), // 当前表外键
+        inverseJoinColumns = @JoinColumn(name = "student_id") // 关联表外键
+    )
+    private Set<Student> students = new HashSet<>(); // 学生
+
+    public ClassGroup(String name, String description, Teacher teacher) {
+        this.name = name;
+        this.description = description;
+        this.teacher = teacher;
+    }
+
+    // 显式的getter和setter方法  包冲突了
     public Long getId() {
         return id;
     }
@@ -57,7 +71,7 @@ public class ClassGroup {
         this.name = name;
     }
 
-    public String getDescription() { 
+    public String getDescription() {
         return description;
     }
 
@@ -80,4 +94,4 @@ public class ClassGroup {
     public void setStudents(Set<Student> students) {
         this.students = students;
     }
-} 
+}

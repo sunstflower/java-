@@ -12,6 +12,7 @@ package com.management.system.model;
  * }
  */
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -28,6 +29,7 @@ public class Teacher extends User {
     private String teacherId;
     
     @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL) // 级联操作
+    @JsonManagedReference // 防止JSON序列化无限循环
     private Set<ClassGroup> classGroups = new HashSet<>(); // 班级组
     
     // 无参
