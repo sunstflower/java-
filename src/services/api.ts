@@ -85,10 +85,66 @@ const authService = {
     try {
       const decoded = jwtDecode(token);
       // 检查token是否过期
-      return (decoded as any).exp * 1000 > Date.now();
+      return (decoded as any).exp * 1000 > Date.now();   // 过期时间戳
     } catch (e) {
       return false;
     }
+  },
+};
+
+// 班级加入服务
+const classJoinService = {
+  // 生成班级加入码
+  generateJoinCode: async (classGroupId: number) => {
+    return await api.post(`/class-join/generate/${classGroupId}`);
+  },
+
+  // 获取班级加入码信息
+  getJoinCodeInfo: async (classGroupId: number) => {
+    return await api.get(`/class-join/info/${classGroupId}`);
+  },
+
+  // 学生加入班级
+  joinClass: async (data: { joinCode: string; studentName: string; studentId: string; password?: string }) => {
+    return await api.post('/class-join/join', data);
+  },
+};
+
+// 考勤码服务
+const attendanceCodeService = {
+  // 教师生成考勤码
+  generateAttendanceCode: async (classGroupId: number, description: string, validMinutes: number = 10) => {
+    return await api.post('/attendance/generate', { classGroupId, description, validMinutes });
+  },
+
+  // 学生签到
+  checkIn: async (attendanceCode: string) => {
+    return await api.post('/attendance/checkin', { attendanceCode });
+  },
+
+  // 无需认证的考勤码验证（用于表单页面）
+  verifyAttendanceCode: async (attendanceCode: string, username: string) => {
+    return await api.post('/attendance/verify', { attendanceCode, username });
+  },
+
+  // 带用户信息的考勤签到（用于表单页面）
+  checkInWithUserInfo: async (attendanceCode: string, username: string, password: string) => {
+    return await api.post('/attendance/checkin-with-user', { attendanceCode, username, password });
+  },
+
+  // 获取考勤状态
+  getAttendanceStatus: async (attendanceCodeId: number) => {
+    return await api.get(`/attendance/status/${attendanceCodeId}`);
+  },
+
+  // 获取考勤历史
+  getAttendanceHistory: async (classGroupId: number) => {
+    return await api.get(`/attendance/history/${classGroupId}`);
+  },
+
+  // 结束考勤
+  endAttendance: async (attendanceCodeId: number) => {
+    return await api.post(`/attendance/end/${attendanceCodeId}`);
   },
 };
 
@@ -185,4 +241,12 @@ const attendanceService = {
   }
 };
 
-export { api, authService, qrCodeService, classGroupService, attendanceService }; 
+export { 
+  api, 
+  authService, 
+  classJoinService, 
+  attendanceCodeService, 
+  qrCodeService, 
+  classGroupService, 
+  attendanceService 
+}; 

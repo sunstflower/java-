@@ -103,7 +103,7 @@ const QRCodeScanner: React.FC = () => {
             setScanResult(verificationResult);
             
             // 记录考勤
-            const attendanceResponse = await attendanceService.recordAttendance(
+            await attendanceService.recordAttendance(
               verificationResult.studentId,
               parseInt(selectedClassGroup),
               true,

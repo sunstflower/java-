@@ -1,200 +1,139 @@
-// 班级详情页面
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   Container,
   Typography,
-  Box,
   Paper,
-  Button,
-  TextField,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Grid,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemSecondaryAction,
-  Avatar,
-  IconButton,
-  Divider,
+  Box,
   CircularProgress,
-  Snackbar,
-  Alert,
   Card,
   CardContent,
-  CardHeader,
-  Tabs,
-  Tab
+  List,
+  ListItem,
+  ListItemText,
+  Button,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
-import {
-  Person as PersonIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Add as AddIcon
-} from '@mui/icons-material';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import { ClassGroup, Student } from '../../interfaces';
-import { classGroupService } from '../../services/api';
+import { QrCode2, Share, People, AccessTime } from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import { ClassGroup } from '../../interfaces';
+import { classGroupService, classJoinService, attendanceCodeService } from '../../services/api';
 
-// 表单验证架构
-const validationSchema = Yup.object({
-  name: Yup.string().required('请输入班级名称'),
-  description: Yup.string(),
-});
-
-// 标签面板组件
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel: React.FC<TabPanelProps> = (props) => {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
-  );
-};
-
-// 班级详情页面
 const ClassGroupDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [classGroup, setClassGroup] = useState<ClassGroup | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
-  const [addStudentDialogOpen, setAddStudentDialogOpen] = useState<boolean>(false);
-  const [studentIdToAdd, setStudentIdToAdd] = useState<string>('');
-  const [removeConfirmOpen, setRemoveConfirmOpen] = useState<boolean>(false);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
-  const [tabValue, setTabValue] = useState<number>(0);
+  
+  // 班级加入码相关状态
+  const [joinCodeInfo, setJoinCodeInfo] = useState<any>(null);
+  const [joinCodeDialogOpen, setJoinCodeDialogOpen] = useState(false);
+  const [generateJoinCodeLoading, setGenerateJoinCodeLoading] = useState(false);
 
-  // 加载班级详情
+  // 考勤码相关状态
+  const [attendanceCodeInfo, setAttendanceCodeInfo] = useState<any>(null);
+  const [attendanceCodeDialogOpen, setAttendanceCodeDialogOpen] = useState(false);
+  const [generateAttendanceCodeDialogOpen, setGenerateAttendanceCodeDialogOpen] = useState(false);
+  const [generateAttendanceCodeLoading, setGenerateAttendanceCodeLoading] = useState(false);
+  const [attendanceDescription, setAttendanceDescription] = useState('');
+  const [attendanceValidMinutes, setAttendanceValidMinutes] = useState(10);
+
   useEffect(() => {
-    if (!id) return;
-    
-    const fetchClassGroupDetails = async () => {
-      setLoading(true);
+    const fetchClassGroup = async () => {
+      if (!id) return;
+      
       try {
+        setLoading(true);
         const response = await classGroupService.getClassGroupById(parseInt(id));
         setClassGroup(response.data);
+        
+        // 尝试获取班级加入码信息
+        try {
+          const joinCodeResponse = await classJoinService.getJoinCodeInfo(parseInt(id));
+          setJoinCodeInfo(joinCodeResponse.data);
+        } catch (joinCodeError) {
+          // 如果没有加入码，这是正常的
+          console.log('No join code exists yet');
+        }
       } catch (err: any) {
-        console.error('Error fetching class group details:', err);
         setError(err.response?.data?.message || '获取班级详情失败');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchClassGroupDetails();
+    fetchClassGroup();
   }, [id]);
 
-  // 编辑班级表单
-  const formik = useFormik({
-    initialValues: {
-      name: classGroup?.name || '',
-      description: classGroup?.description || '',
-    },
-    validationSchema: validationSchema,
-    enableReinitialize: true,
-    onSubmit: async (values) => {
-      if (!id) return;
-      
-      try {
-        await classGroupService.updateClassGroup(parseInt(id), values.name, values.description);
-        setEditDialogOpen(false);
-        
-        // 更新本地状态
-        if (classGroup) {
-          setClassGroup({
-            ...classGroup,
-            name: values.name,
-            description: values.description
-          });
-        }
-        
-        showSnackbar('更新班级成功', 'success');
-      } catch (err: any) {
-        console.error('Error updating class group:', err);
-        showSnackbar(err.response?.data?.message || '更新班级失败', 'error');
-      }
-    },
-  });
-
-  // 处理添加学生
-  const handleAddStudent = async () => {
-    if (!id || !studentIdToAdd) return;
+  const handleGenerateJoinCode = async () => {
+    if (!id) return;
     
     try {
-      // 这里假设有一个API可以通过学生ID添加学生到班级
-      await classGroupService.addStudentToClassGroup(parseInt(id), parseInt(studentIdToAdd));
-      setAddStudentDialogOpen(false);
-      setStudentIdToAdd('');
-      
-      // 重新加载班级详情
-      const response = await classGroupService.getClassGroupById(parseInt(id));
-      setClassGroup(response.data);
-      
-      showSnackbar('添加学生成功', 'success');
-    } catch (err: any) {
-      console.error('Error adding student:', err);
-      showSnackbar(err.response?.data?.message || '添加学生失败', 'error');
+      setGenerateJoinCodeLoading(true);
+      const response = await classJoinService.generateJoinCode(parseInt(id));
+      setJoinCodeInfo(response.data);
+      setJoinCodeDialogOpen(true);
+      toast.success('班级加入码生成成功');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || '生成加入码失败');
+    } finally {
+      setGenerateJoinCodeLoading(false);
     }
   };
 
-  // 处理移除学生
-  const handleRemoveStudent = async () => {
-    if (!id || !selectedStudent) return;
-    
-    try {
-      await classGroupService.removeStudentFromClassGroup(parseInt(id), selectedStudent.id);
-      setRemoveConfirmOpen(false);
-      setSelectedStudent(null);
-      
-      // 更新本地状态
-      if (classGroup && classGroup.students) {
-        setClassGroup({
-          ...classGroup,
-          students: classGroup.students.filter(s => s.id !== selectedStudent.id)
-        });
-      }
-      
-      showSnackbar('移除学生成功', 'success');
-    } catch (err: any) {
-      console.error('Error removing student:', err);
-      showSnackbar(err.response?.data?.message || '移除学生失败', 'error');
+  const handleShowJoinCode = () => {
+    setJoinCodeDialogOpen(true);
+  };
+
+  const copyJoinCode = () => {
+    if (joinCodeInfo?.joinCode) {
+      navigator.clipboard.writeText(joinCodeInfo.joinCode);
+      toast.success('加入码已复制到剪贴板');
     }
   };
 
-  // 显示提示信息
-  const showSnackbar = (message: string, severity: 'success' | 'error') => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setSnackbarOpen(true);
+  const handleGenerateAttendanceCode = async () => {
+    if (!id) return;
+    
+    try {
+      setGenerateAttendanceCodeLoading(true);
+      const response = await attendanceCodeService.generateAttendanceCode(
+        parseInt(id), 
+        attendanceDescription || '课堂考勤',
+        attendanceValidMinutes
+      );
+      setAttendanceCodeInfo(response.data);
+      setAttendanceCodeDialogOpen(true);
+      setGenerateAttendanceCodeDialogOpen(false);
+      setAttendanceDescription('');
+      setAttendanceValidMinutes(10);
+      toast.success('考勤码生成成功');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || '生成考勤码失败');
+    } finally {
+      setGenerateAttendanceCodeLoading(false);
+    }
   };
 
-  // 处理标签变更
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  const copyAttendanceCode = () => {
+    if (attendanceCodeInfo?.attendanceCode) {
+      navigator.clipboard.writeText(attendanceCodeInfo.attendanceCode);
+      toast.success('考勤码已复制到剪贴板');
+    }
+  };
+
+  const formatDateTime = (dateTimeString: string) => {
+    return new Date(dateTimeString).toLocaleString('zh-CN');
   };
 
   if (loading) {
@@ -205,240 +144,300 @@ const ClassGroupDetail: React.FC = () => {
     );
   }
 
-  if (error || !classGroup) {
+  if (error) {
     return (
-      <Container sx={{ mt: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Paper sx={{ p: 3, bgcolor: 'error.light', color: 'error.contrastText' }}>
-          <Typography variant="h6" gutterBottom>
-            错误
-          </Typography>
-          <Typography>{error || '无法加载班级详情'}</Typography>
-          <Button
-            variant="contained"
-            sx={{ mt: 2 }}
-            onClick={() => navigate('/teacher/classgroups')}
-          >
-            返回班级列表
-          </Button>
+          <Typography variant="h6">{error}</Typography>
         </Paper>
+      </Container>
+    );
+  }
+
+  if (!classGroup) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Typography variant="h6">班级不存在</Typography>
       </Container>
     );
   }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* 班级信息卡片 */}
+      <Typography variant="h4" component="h1" gutterBottom>
+        {classGroup.name}
+      </Typography>
+      
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h4" component="h1">
-            {classGroup.name}
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<EditIcon />}
-            onClick={() => setEditDialogOpen(true)}
-          >
-            编辑
-          </Button>
-        </Box>
-        
-        <Typography variant="body1" sx={{ mb: 1 }}>
-          {classGroup.description || '无描述'}
+        <Typography variant="body1" paragraph>
+          {classGroup.description || '暂无描述'}
         </Typography>
-        
-        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            教师: {classGroup.teacher?.username || 'N/A'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            学生人数: {classGroup.students?.length || 0}
-          </Typography>
-        </Box>
       </Paper>
 
-      {/* 标签页 */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="班级管理标签页">
-          <Tab label="学生管理" id="tab-0" aria-controls="tabpanel-0" />
-          <Tab label="考勤记录" id="tab-1" aria-controls="tabpanel-1" disabled />
-        </Tabs>
-      </Box>
-
-      {/* 学生管理标签面板 */}
-      <TabPanel value={tabValue} index={0}>
-        <Card>
-          <CardHeader
-            title="学生列表"
-            action={
+      {/* 班级加入码卡片 */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              班级加入码
+            </Typography>
+            {joinCodeInfo ? (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<QrCode2 />}
+                  onClick={handleShowJoinCode}
+                >
+                  查看二维码
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<Share />}
+                  onClick={copyJoinCode}
+                >
+                  复制加入码
+                </Button>
+              </Box>
+            ) : (
               <Button
-                startIcon={<AddIcon />}
-                color="primary"
-                onClick={() => setAddStudentDialogOpen(true)}
+                variant="contained"
+                startIcon={<QrCode2 />}
+                onClick={handleGenerateJoinCode}
+                disabled={generateJoinCodeLoading}
               >
-                添加学生
+                生成加入码
               </Button>
-            }
-          />
-          <Divider />
-          <CardContent sx={{ p: 0 }}>
-            <List>
-              {classGroup.students && classGroup.students.length > 0 ? (
-                classGroup.students.map((student) => (
-                  <React.Fragment key={student.id}>
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar>
-                          <PersonIcon />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={student.username}
-                        secondary={`学号: ${student.studentId} | ${student.email}`}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton
-                          edge="end"
-                          aria-label="删除"
-                          onClick={() => {
-                            setSelectedStudent(student);
-                            setRemoveConfirmOpen(true);
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    <Divider variant="inset" component="li" />
-                  </React.Fragment>
-                ))
-              ) : (
-                <ListItem>
-                  <ListItemText primary="班级中还没有学生" />
-                </ListItem>
-              )}
-            </List>
-          </CardContent>
-        </Card>
-      </TabPanel>
+            )}
+          </Box>
+          
+          {joinCodeInfo ? (
+            <Box>
+              <Alert severity="success" sx={{ mb: 2 }}>
+                学生可以扫描加入码二维码或手动输入加入码来加入班级
+              </Alert>
+              <Typography variant="body2" color="text.secondary">
+                加入码：<strong>{joinCodeInfo.joinCode}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                有效期至：{formatDateTime(joinCodeInfo.expiryTime)}
+              </Typography>
+              <Box sx={{ mt: 1 }}>
+                <Chip
+                  label={joinCodeInfo.active ? "有效" : "已失效"}
+                  color={joinCodeInfo.active ? "success" : "error"}
+                  size="small"
+                />
+              </Box>
+            </Box>
+          ) : (
+            <Alert severity="info">
+              还没有生成班级加入码。生成后，学生可以通过扫描二维码加入班级。
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* 考勤记录标签面板 */}
-      <TabPanel value={tabValue} index={1}>
-        <Typography>考勤记录功能尚未实现</Typography>
-      </TabPanel>
-
-      {/* 编辑班级对话框 */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>编辑班级</DialogTitle>
-        <form onSubmit={formik.handleSubmit}>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              id="name"
-              name="name"
-              label="班级名称"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={formik.values.name}
-              onChange={formik.handleChange}
-              error={formik.touched.name && Boolean(formik.errors.name)}
-              helperText={formik.touched.name && formik.errors.name}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              id="description"
-              name="description"
-              label="班级描述"
-              type="text"
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              value={formik.values.description}
-              onChange={formik.handleChange}
-              error={formik.touched.description && Boolean(formik.errors.description)}
-              helperText={formik.touched.description && formik.errors.description}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)}>取消</Button>
-            <Button type="submit" color="primary" variant="contained">
-              保存
+      {/* 考勤码管理卡片 */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              考勤码管理
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AccessTime />}
+              onClick={() => setGenerateAttendanceCodeDialogOpen(true)}
+              color="secondary"
+            >
+              生成考勤码
             </Button>
-          </DialogActions>
-        </form>
+          </Box>
+          
+          <Alert severity="info">
+            生成考勤码后，学生可以扫描二维码进行签到。每个考勤码都有时间限制。
+          </Alert>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              班级学生 ({classGroup.students?.length || 0}人)
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<People />}
+              disabled // 可以在这里添加手动添加学生的功能
+            >
+              管理学生
+            </Button>
+          </Box>
+          
+          {classGroup.students && classGroup.students.length > 0 ? (
+            <List>
+              {classGroup.students.map((student) => (
+                <ListItem key={student.id}>
+                  <ListItemText
+                    primary={student.username}
+                    secondary={`学号: ${student.studentId || 'N/A'}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                该班级暂无学生
+              </Typography>
+              {joinCodeInfo && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  请将班级加入码分享给学生，让他们扫码加入班级
+                </Typography>
+              )}
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 加入码二维码对话框 */}
+      <Dialog open={joinCodeDialogOpen} onClose={() => setJoinCodeDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>班级加入二维码</DialogTitle>
+        <DialogContent>
+          {joinCodeInfo && (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body1" gutterBottom>
+                {classGroup.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                学生扫描此二维码即可加入班级
+              </Typography>
+              
+              {joinCodeInfo.qrImage && (
+                <Box sx={{ my: 2 }}>
+                  <img
+                    src={joinCodeInfo.qrImage}
+                    alt="班级加入二维码"
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                  />
+                </Box>
+              )}
+              
+              <Typography variant="body2" color="text.secondary">
+                加入码：<strong>{joinCodeInfo.joinCode}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                有效期至：{formatDateTime(joinCodeInfo.expiryTime)}
+              </Typography>
+              
+              <Button
+                variant="outlined"
+                onClick={copyJoinCode}
+                sx={{ mt: 2 }}
+              >
+                复制加入码
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setJoinCodeDialogOpen(false)}>关闭</Button>
+        </DialogActions>
       </Dialog>
 
-      {/* 添加学生对话框 */}
-      <Dialog open={addStudentDialogOpen} onClose={() => setAddStudentDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>添加学生</DialogTitle>
+      {/* 生成考勤码对话框 */}
+      <Dialog open={generateAttendanceCodeDialogOpen} onClose={() => setGenerateAttendanceCodeDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>生成考勤码</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            请输入要添加到班级的学生ID。
-          </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
-            id="studentId"
-            label="学生ID"
-            type="text"
+            label="考勤描述"
             fullWidth
             variant="outlined"
-            value={studentIdToAdd}
-            onChange={(e) => setStudentIdToAdd(e.target.value)}
+            value={attendanceDescription}
+            onChange={(e) => setAttendanceDescription(e.target.value)}
+            placeholder="例如：第一节课考勤"
+            sx={{ mb: 2 }}
           />
+          
+          <FormControl fullWidth variant="outlined">
+            <InputLabel>有效时长（分钟）</InputLabel>
+            <Select
+              value={attendanceValidMinutes}
+              onChange={(e) => setAttendanceValidMinutes(Number(e.target.value))}
+              label="有效时长（分钟）"
+            >
+              <MenuItem value={5}>5分钟</MenuItem>
+              <MenuItem value={10}>10分钟</MenuItem>
+              <MenuItem value={15}>15分钟</MenuItem>
+              <MenuItem value={30}>30分钟</MenuItem>
+              <MenuItem value={60}>60分钟</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddStudentDialogOpen(false)}>取消</Button>
-          <Button
-            onClick={handleAddStudent}
-            color="primary"
+          <Button onClick={() => setGenerateAttendanceCodeDialogOpen(false)}>取消</Button>
+          <Button 
+            onClick={handleGenerateAttendanceCode}
+            disabled={generateAttendanceCodeLoading}
             variant="contained"
-            disabled={!studentIdToAdd}
           >
-            添加
+            {generateAttendanceCodeLoading ? <CircularProgress size={24} /> : '生成'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* 移除学生确认对话框 */}
-      <Dialog
-        open={removeConfirmOpen}
-        onClose={() => setRemoveConfirmOpen(false)}
-      >
-        <DialogTitle>确认移除</DialogTitle>
+      {/* 考勤码二维码对话框 */}
+      <Dialog open={attendanceCodeDialogOpen} onClose={() => setAttendanceCodeDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>考勤二维码</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            您确定要将学生 "{selectedStudent?.username}" 从班级中移除吗？
-          </DialogContentText>
+          {attendanceCodeInfo && (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body1" gutterBottom>
+                {attendanceCodeInfo.description}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                学生扫描此二维码即可签到
+              </Typography>
+              
+              {attendanceCodeInfo.qrImage && (
+                <Box sx={{ my: 2 }}>
+                  <img
+                    src={attendanceCodeInfo.qrImage}
+                    alt="考勤二维码"
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                  />
+                </Box>
+              )}
+              
+              <Typography variant="body2" color="text.secondary">
+                考勤码：<strong>{attendanceCodeInfo.attendanceCode}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                有效期至：{formatDateTime(attendanceCodeInfo.expiryTime)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                班级学生总数：{attendanceCodeInfo.totalStudents}人
+              </Typography>
+              
+              <Button
+                variant="outlined"
+                onClick={copyAttendanceCode}
+                sx={{ mt: 2 }}
+              >
+                复制考勤码
+              </Button>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRemoveConfirmOpen(false)}>取消</Button>
-          <Button onClick={handleRemoveStudent} color="error" autoFocus>
-            移除
-          </Button>
+          <Button onClick={() => setAttendanceCodeDialogOpen(false)}>关闭</Button>
         </DialogActions>
       </Dialog>
-
-      {/* 提示消息 */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          variant="filled"
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </Container>
   );
 };
 
-export default ClassGroupDetail; 
+export default ClassGroupDetail;

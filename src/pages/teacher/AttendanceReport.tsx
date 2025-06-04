@@ -6,7 +6,6 @@ import {
   Box,
   Paper,
   Grid,
-  TextField,
   Button,
   CircularProgress,
   Table,
@@ -22,13 +21,11 @@ import {
   Select,
   MenuItem
 } from '@mui/material';
-import { useAuth } from '../../contexts/AuthContext';
 import { ClassGroup } from '../../interfaces';
 import { attendanceService, classGroupService } from '../../services/api';
 
 // 教师考勤报告页面
 const AttendanceReport: React.FC = () => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(false);
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([]);
   const [selectedClassGroup, setSelectedClassGroup] = useState<string>('');

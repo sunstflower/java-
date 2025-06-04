@@ -55,6 +55,70 @@ export interface Teacher extends User {
   classGroups: ClassGroup[];
 }
 
+// 班级加入码相关接口
+export interface ClassJoinCode {
+  id: number;
+  classGroup: ClassGroup;
+  joinCode: string;
+  generatedTime: string;
+  expiryTime: string;
+  active: boolean;
+}
+
+export interface ClassJoinRequest {
+  joinCode: string;
+  studentName: string;
+  studentId: string;
+}
+
+export interface ClassJoinResponse {
+  success: boolean;
+  message: string;
+  className: string;
+  teacherName: string;
+}
+
+// 考勤码相关接口
+export interface AttendanceCode {
+  id: number;
+  classGroup: ClassGroup;
+  teacher: Teacher;
+  attendanceCode: string;
+  description: string;
+  generatedTime: string;
+  expiryTime: string;
+  active: boolean;
+  attendedStudents: Student[];
+}
+
+export interface AttendanceCodeCreateRequest {
+  classGroupId: number;
+  description: string;
+  validMinutes: number;
+}
+
+export interface AttendanceCodeResponse {
+  attendanceCodeId: number;
+  attendanceCode: string;
+  qrImage: string;
+  description: string;
+  expiryTime: string;
+  classGroup: string;
+  totalStudents: number;
+}
+
+export interface AttendanceCheckinRequest {
+  attendanceCode: string;
+}
+
+export interface AttendanceCheckinResponse {
+  success: boolean;
+  message: string;
+  className: string;
+  description: string;
+  checkinTime: string;
+}
+
 // 考勤相关接口
 export interface Attendance {
   id: number;
@@ -113,8 +177,10 @@ export enum RoutePath {
   CLASS_GROUP_DETAIL = '/teacher/classgroups/:id',
   ATTENDANCE = '/teacher/attendance',
   ATTENDANCE_REPORT = '/teacher/attendance/report',
+  ATTENDANCE_MANAGEMENT = '/teacher/attendance/management',
   STUDENT_QR_CODE = '/student/qrcode',
   STUDENT_ATTENDANCE = '/student/attendance',
+  STUDENT_SCANNER = '/student/scanner',
   PROFILE = '/profile',
 }
 

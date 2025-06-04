@@ -58,6 +58,19 @@ const Navbar: React.FC = () => {
     handleCloseUserMenu();
   };
 
+  // 处理Logo点击
+  const handleLogoClick = () => {
+    if (!isAuthenticated || !user) {
+      navigate('/');
+    } else if (user.role.includes('ROLE_STUDENT')) {
+      navigate('/student/dashboard');
+    } else if (user.role.includes('ROLE_TEACHER')) {
+      navigate('/teacher/dashboard');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   // 根据用户角色获取页面链接
   const getPages = () => {
     if (!user || !isAuthenticated) {
@@ -70,6 +83,7 @@ const Navbar: React.FC = () => {
     if (user.role.includes('ROLE_STUDENT')) {
       return [
         { title: '我的主页', path: '/student/dashboard' },
+        { title: '扫码功能', path: '/student/scanner' },
         { title: '我的二维码', path: '/student/qrcode' },
         { title: '出勤记录', path: '/student/attendance' },
       ];
@@ -79,7 +93,7 @@ const Navbar: React.FC = () => {
       return [
         { title: '教师主页', path: '/teacher/dashboard' },
         { title: '班级管理', path: '/teacher/classgroups' },
-        { title: '考勤管理', path: '/teacher/attendance' },
+        { title: '考勤管理', path: '/teacher/attendance/management' },
         { title: '考勤报告', path: '/teacher/attendance/report' },
       ];
     }
@@ -100,8 +114,7 @@ const Navbar: React.FC = () => {
           <Typography
             variant="h6"
             noWrap
-            component={Link}
-            to="/"
+            onClick={handleLogoClick}
             sx={{
               mr: 2,
               display: { xs: 'none', md: 'flex' },
@@ -110,6 +123,7 @@ const Navbar: React.FC = () => {
               letterSpacing: '.3rem',
               color: 'inherit',
               textDecoration: 'none',
+              cursor: 'pointer',
             }}
           >
             学生管理系统
@@ -158,8 +172,7 @@ const Navbar: React.FC = () => {
           <Typography
             variant="h5"
             noWrap
-            component={Link}
-            to="/"
+            onClick={handleLogoClick}
             sx={{
               mr: 2,
               display: { xs: 'flex', md: 'none' },
@@ -169,6 +182,7 @@ const Navbar: React.FC = () => {
               letterSpacing: '.3rem',
               color: 'inherit',
               textDecoration: 'none',
+              cursor: 'pointer',
             }}
           >
             学生管理系统
