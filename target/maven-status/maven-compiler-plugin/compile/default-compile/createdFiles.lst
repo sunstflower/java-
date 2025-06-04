@@ -1,8 +1,11 @@
 com/management/system/model/ClassGroup.class
+com/management/system/model/AttendanceCode.class
 com/management/system/repository/ClassGroupRepository.class
 com/management/system/payload/response/JwtResponse.class
 com/management/system/repository/TeacherRepository.class
+com/management/system/service/AttendanceCodeService.class
 com/management/system/controller/AuthController.class
+com/management/system/repository/AttendanceCodeRepository.class
 com/management/system/payload/request/SignupRequest.class
 com/management/system/controller/ClassGroupController.class
 com/management/system/StudentManagementSystemApplication.class
@@ -17,6 +20,7 @@ com/management/system/repository/QRCodeRepository.class
 com/management/system/security/JwtTokenUtil.class
 com/management/system/controller/QRCodeController.class
 com/management/system/repository/UserRepository.class
+com/management/system/controller/ClassJoinController.class
 com/management/system/repository/StudentRepository.class
 com/management/system/controller/AttendanceController.class
 com/management/system/model/User.class
@@ -24,8 +28,11 @@ com/management/system/model/Student.class
 com/management/system/model/Attendance.class
 com/management/system/service/UserDetailsServiceImpl.class
 com/management/system/repository/AttendanceRepository.class
+com/management/system/repository/ClassJoinCodeRepository.class
 com/management/system/model/ERole.class
 com/management/system/service/AttendanceService.class
+com/management/system/model/ClassJoinCode.class
+com/management/system/service/ClassJoinCodeService.class
 com/management/system/dto/ClassGroupDTO.class
 com/management/system/security/JwtAuthenticationEntryPoint.class
 com/management/system/dto/ClassGroupDTO$StudentDTO.class

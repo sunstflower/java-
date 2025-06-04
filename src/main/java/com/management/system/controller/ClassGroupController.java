@@ -17,8 +17,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid; // 验证
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController  
@@ -41,9 +43,11 @@ public class ClassGroupController {
     @GetMapping("/{id}")  // {id} 路径变量
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN') or hasRole('STUDENT')")
     public ResponseEntity<?> getClassGroupById(@PathVariable Long id) {
-        Optional<ClassGroup> classGroup = classGroupService.getClassGroupById(id);
+        Optional<ClassGroup> classGroup = classGroupService.getClassGroupByIdWithStudents(id);
         if (classGroup.isPresent()) {
-            return ResponseEntity.ok(classGroup.get());
+            // 使用DTO来避免序列化问题
+            ClassGroupDTO classGroupDTO = new ClassGroupDTO(classGroup.get());
+            return ResponseEntity.ok(classGroupDTO);
         } else {
             return ResponseEntity.badRequest().body(new MessageResponse("Class group not found"));
         }
@@ -55,12 +59,22 @@ public class ClassGroupController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); // 获取安全认证
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();  //安全上下方文中拿用户
         
-        // 直接使用teacherId查询，避免Teacher对象序列化问题
-        List<ClassGroup> classGroups = classGroupService.getClassGroupsByTeacherId(userDetails.getId());
-        List<ClassGroupDTO> classGroupDTOs = classGroups.stream()
-                .map(ClassGroupDTO::new)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(classGroupDTOs);
+        try {
+            // 获取教师的班级列表
+            List<ClassGroup> classGroups = classGroupService.getClassGroupsByTeacherId(userDetails.getId());
+            
+            // 转换为DTO避免序列化问题
+            List<ClassGroupDTO> classGroupDTOs = classGroups.stream()
+                    .map(ClassGroupDTO::new)
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(classGroupDTOs);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("teacherId", userDetails.getId());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
     }
     
     @PostMapping

@@ -36,8 +36,11 @@ public class ClassGroupService {
         return classGroupRepository.findByTeacher(teacher);
     }
     
+    @Transactional(readOnly = true)
     public List<ClassGroup> getClassGroupsByTeacherId(Long teacherId) { // 根据教师ID获取班级
-        return classGroupRepository.findByTeacherId(teacherId);
+        List<ClassGroup> classGroups = classGroupRepository.findByTeacherId(teacherId);
+        // 不访问students集合，避免懒加载问题
+        return classGroups;
     }
     
     public ClassGroup createClassGroup(ClassGroup classGroup) { // 创建班级
@@ -80,5 +83,13 @@ public class ClassGroupService {
         
         studentRepository.save(student);
         classGroupRepository.save(classGroup);
+    }
+    
+    @Transactional(readOnly = true)
+    public Optional<ClassGroup> getClassGroupByIdWithStudents(Long id) { // 获取班级和学生信息
+        Optional<ClassGroup> classGroup = classGroupRepository.findById(id);
+        // 强制加载students集合
+        classGroup.ifPresent(cg -> cg.getStudents().size());
+        return classGroup;
     }
 } 

@@ -79,6 +79,9 @@ public class SecurityConfig {
             .authorizeRequests()
             .antMatchers("/api/auth/**").permitAll()
             .antMatchers("/api/public/**").permitAll()
+            .antMatchers("/api/class-join/join").permitAll()
+            .antMatchers("/api/attendance/verify").permitAll()
+            .antMatchers("/api/attendance/checkin-with-user").permitAll()
             .antMatchers("/h2-console/**").permitAll()
             .anyRequest().authenticated();
 

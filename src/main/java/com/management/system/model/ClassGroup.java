@@ -11,18 +11,12 @@ package com.management.system.model;
  */
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity // JPA实体类
 @Table(name = "class_groups") 
 public class ClassGroup {
@@ -48,7 +42,13 @@ public class ClassGroup {
     )
     private Set<Student> students = new HashSet<>(); // 学生
 
+    // 默认构造函数
+    public ClassGroup() {
+        this.students = new HashSet<>();
+    }
+
     public ClassGroup(String name, String description, Teacher teacher) {
+        this();
         this.name = name;
         this.description = description;
         this.teacher = teacher;
